@@ -82,13 +82,85 @@ class HubDataParser {
         var temperature = this.getFloat();
         var status = this.getByte();
         return {
-            percentage:percentage,
-            voltage:voltage,
-            capacity:capacity,
-            current:current,
-            temperature:temperature,
-            status:status
+            percentage: percentage,
+            voltage: voltage,
+            capacity: capacity,
+            current: current,
+            temperature: temperature,
+            status: status
         }
+    }
+
+    /**
+     * Extracts a signal packet from the buffer
+     */
+    getNetworkSignalInfo() {
+        var rssi = this.getInteger();
+        var ber = this.getInteger();
+        if (rssi == 99) rssi = 0;
+        var rssi_dbm = rssi * 2.032258065 - 115;
+        return {
+            rssi_raw: rssi,
+            rssi_dbm: rssi_dbm,
+            quality_band: ber
+        }
+    }
+
+    /**
+     * Extract a short location data (GSP/GPS) without extra fields
+     */
+    getShortLocationData() {
+        var accuracy = this.getByte();
+        var accuracy_as_text = accuracy == 0 ? 'NONE' : accuracy == 1 ? 'GPS' : 'GSM';
+
+        // if accuracy is NONE (no GPS no GSM) don't parse lat and lon
+        var flat = 0;
+        var flon = 0;
+        if (accuracy > 0) {
+            flat = this.getFloat();
+            flon = this.getFloat(); // Alain de Flon
+        }
+
+        return {
+            loc: { lat: flat, lon: flon },
+            accuracy: accuracy,
+            accuracyText: accuracy_as_text
+        }
+    }
+
+    /**
+     * Extract a hybrid GSM/GPS location packet from the buffer
+     */
+    getLocationData() {
+        var flat = this.getFloat(); // flat earther gtfo
+        var flon = this.getFloat();
+        var fix_status = this.getByte();
+        var accuracy = this.getByte();
+        var satellites_in_view = this.getByte();
+        var satellites_used = this.getByte();
+        var c_N0 = this.getByte();
+        var accuracy_as_text = accuracy == 0 ? 'NONE' : accuracy == 1 ? 'GPS' : 'GSM';
+        return {
+            loc: { lat: flat, lon: flon },
+            accuracy: accuracy,
+            accuracyText: accuracy_as_text,
+            gpsExtra: {
+                fix: fix_status,
+                satellitesUsed: satellites_used,
+                satellitesInView: satellites_in_view,
+                noiseRatio: c_N0
+            }
+        }
+    }
+
+    /**
+     * Extracts a string from the buffer
+     * The default encoding is ASCII!
+     */
+    getString(len) {
+        var str = this.buffer.toString('ascii', this.offset, this.offset + len);
+        this.offset += len;
+        return str;
     }
 }
 
