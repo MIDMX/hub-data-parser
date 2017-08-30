@@ -77,9 +77,9 @@ class HubDataParser {
     getBatteryData() {
         var percentage = this.getInteger();
         var voltage = this.getInteger();
-        var capacity = this.getInteger();
-        var current = this.getInteger();
         var temperature = this.getFloat();
+        var current = this.getInteger();
+        var capacity = this.getInteger();
         var status = this.getByte();
         return {
             percentage: percentage,
